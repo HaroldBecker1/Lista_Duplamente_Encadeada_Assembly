@@ -1,5 +1,5 @@
             .data
-menu:   	.asciiz		"\n\n-  Lista Ordenada  -\n-       MENU       - \n1 - Incluir Elemento \n2 - Excluir Elemento por indice\n3 - Excluir Elemento por valor\n4 - Mostrar Lista Ordenada\n5 - Mostrar Totais\n6 - Sair\n\nopcao: "
+menu:   	.asciiz		"\n\n-  Lista Ordenada  -\n-       MENU       - \n1 - Incluir Elemento \n2 - Excluir Elemento por indice\n3 - Excluir Elemento por valor\n4 -Ordena Lista\n5 - Mostrar Totais\n6- Mostrar Lista\n7 - Sair\n\nopcao: "
 
 txt_invalida: 	.asciiz		"OPCAO INVALIDA\n"
 txt_valor: 		.asciiz		"Entre com o valor a ser inserido: "
@@ -51,7 +51,9 @@ case_escolha:
 	beq  $t0, $t1, ordenar
 	addi $t1, $zero, 5
 	beq  $t0, $t1, mostrar_totais
-	addi $t1, $zero, 6
+    addi $t1, $zero, 6
+	beq  $t0, $t1, mostrar_lista
+    addi $t1, $zero, 7
 	beq  $t0, $t1, op_sair
 ###############################################################################
 #                       Imprime Opção inválida                                #
@@ -77,7 +79,7 @@ incluir_elemento:
     li $v0, 5                           # Lê um inteiro digitado pelo usuario
     syscall
     add $t0, $zero, $v0                 # Coloca o valor lido em $t0
-    bne $t0, $zero, lista_com_elementos # Caso a lisa não seja nula pula para incluir o próximo valor
+    bne $s0, $zero, lista_com_elementos # Caso a lisa não seja nula pula para incluir o próximo valor
     li $a0, 12 			                # Quantidade de bytes de memória a ser alocado
     li $v0, 9                           # Comando para alocal dinamicamente na memória
     syscall
@@ -85,6 +87,9 @@ incluir_elemento:
     sw $t0, 4($v0)                      # Coloca valor na memoria
     sw $zero, 8($v0)                    # Faz o ponteiro próximo apontar para NULL
     move $s0, $v0                       # Move o inicio do vetor para $s0
+    li $v0, 1
+    move $a0, $s0
+    syscall
     move $t1, $v0                       # Move o ponteiro para $t1
     addi $v0, $zero, 0                  # Coloca 0 em $v0
     addi $s2, $zero, 1                  # Inicia o contador de inclusões
@@ -152,6 +157,40 @@ mostrar_totais:
     syscall
 
     j mostrar_menu                      # Retorna para o início
+###############################################################################
+#                           Mostrar Lista                                     #
+###############################################################################
+#   $t0 -> Local de memória do valor                                          #
+#   $t1 -> Valor a ser exibido                                                #
+#   $t2 -> Contador do laço                                                   #
+#   $s0 -> Inicio da Lista                                                    #
+#   $s2 -> Quantidade de Valores inseridos                                    #
+###############################################################################
+mostrar_lista:
+    li $v0, 4
+    la $a0, txt_lista                   # Printa uma string
+    syscall
+    add $t2, $zero, $zero               # Contador do vetor
+    move $t0, $s0                       # Move o inicio do vetor para $t0
+    addi $t0, $t0, 4                    # Pega o valor Contido na primeira posição
+    bne $s0, $zero, listar              # Caso  $s0 não seja nulo ele mostra a lista
+    li $v0, 4
+    la $a0, txt_vazia                   # Printa uma string
+    syscall
+    j mostrar_menu                      # Retorna para o menu
+
+listar:
+    lw $t1, 0($t0)                      # Busca na memoria o valor do campo
+    li $v0, 1                           # Printa um inteiro
+    move $a0, $t1                       # Printo o valor
+    syscall
+    li $v0, 4                           # Printa uma string
+    la $a0, txt_espaco
+    syscall
+    addi $t2, $t2, 1                    # Incrementa o contador
+    addi $t0, $t0, 12                   # Anda de 12 em 12 bytes no vetor, pois preciso pular 2 ponteiros
+    beq $t2, $s2, mostrar_menu          # Caso o contador seja igual ao numero de inserções ele retorna
+    j listar                            # Retorna para Listar o próximo elemento
 ###############################################################################
 #                         Sair do programa                                    #
 ###############################################################################
