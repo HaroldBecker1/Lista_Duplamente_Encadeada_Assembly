@@ -22,7 +22,7 @@ main:
     add $s0, $zero, $zero               # INICIO DA LISTA
     add $s1, $zero, $zero               # CONTADOR DE EXCLUSÃO
     add $s2, $zero, $zero               # CONTADOR DE INSERSÕES
-    add $s3, $zero, $zero               # Indice a ser incluido
+        add $s3, $zero, $zero           # ÚLTIMO ELEMENTO DA LISTA
 ###############################################################################
 #                              Printa o menu                                  #
 ###############################################################################
@@ -100,7 +100,7 @@ incluir_elemento:
     sw $t0, 4($v0)                      # Inclui o valor na memória
     sw $zero, 8($v0)                    # Faz o ponteiro próximo apontar para NULL
     move $s0, $v0                       # Move o inicio da lista para $s0
-    move $s3, $v0                       # Move e elemento atual da lista para $s3
+    move $s3, $v0                       # Move o último elemento da lista para $s3
     addi $v0, $zero, 0                  # Coloca 0 em $v0
     addi $s2, $s2, 1                    # Inicia o contador de inclusões
 
@@ -119,7 +119,7 @@ lista_com_elementos:
     sw $zero, 8($v0)                    # Faz o ponteiro próximo apontar para NULL
     addi $s3, $s3, 8                    # Posiciona o ponteiro sob o ponteiro próximo
     sw $v0, 0($s3)                      # Inclui alocação na lista
-    move $s3, $v0                       # Move o valor do ponteiro para o atual
+    move $s3, $v0                       # Move o último elemento da lista para $s3
     addi $v0, $zero, 0                  # Coloca 0 em $v0
     addi $s2, $s2, 1                    # Incrementa o contador de inclusões
 
@@ -128,13 +128,12 @@ lista_com_elementos:
 #                      Exclui Elemento por indice                             #
 ###############################################################################
 excluir_por_indice:
-    li $v0, 4
-    la	$a0, txt_indice
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la	$a0, txt_indice                 # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
     li $v0, 5
     syscall
     move $t7, $v0  #valor digitado pelo usuario
-    move $t1, $zero #contador do laço
     bne $s0, $zero, excluir_indice #caso a lista não seja nula
     li $v0, 4
     la $a0, txt_vazia
@@ -143,23 +142,16 @@ excluir_por_indice:
     j mostrar_menu
 
 excluir_indice:
-#################### Estático, não funciona após 1 elemento excluido, pois cria "buracos" na lista,
-#################### logo não posso andar de 12 em 12 senão irei cair nesse buraco
-#################### Preciso buscar o valor conforme o índice sem cair nos buracos. Para isso preciso rodar toda a lista -.-
-    addi $t2, $zero, 12
-    mult $t7, $t2        # multiplico  por 12 para saber qual dado buscar na lista
-    mflo $t7            # pego o dado da multiplicação
-    add $t7, $t7, $s0  #  pego o inicio do vetor e somo com a multiplicação do indice por 12
-############################
-############################
-############################
-############################
-############################
-
+    move $t1, $t7       # Indice
+    move $t7, $s0       # Início do vetor
+    addi $t7, $t7, 8
+    add $t2, $zero, $zero # contador
+    jal acha_indice
+    addi $t7, $t7, -8 #retorna o ponteiro para o anterior
     lw $t3, 0($t7)
     addi $s1, $s1, 1    # contador de exclusoes
     beq $t3, $zero, primeiro_ou_unico
-    add $t7, $t7, 8     # pego o segundo ponteiro
+    addi $t7, $t7, 8     # pego o segundo ponteiro
     lw $t3, 0($t7)      # pego o segundo ponteiro
     beq $t3, $zero, ultimo #passo para pegar o último valor
 ########
@@ -167,6 +159,23 @@ excluir_indice:
     la $a0, txt_sair 			                # Quantidade de bytes a ser alocado
     syscall
 #######
+    j mostrar_menu
+acha_indice:
+    beq $t2, $t1, retorna #caso achou o valor retorna
+    lw $t5, 0($t7)
+    beq $t5, $zero, indice_invalido
+    addi $t7, $t5, 8
+    addi $t2, $t2, 1
+
+    j acha_indice
+retorna:
+    jr $ra
+
+indice_invalido:
+    li $v0, 4
+    la $a0, txt_ind_inex
+    syscall
+
     j mostrar_menu
 
 primeiro_ou_unico:
@@ -205,9 +214,9 @@ ultimo:
 #                                                                             #
 ###############################################################################
 excluir_por_valor:
-    li $v0, 4                           # Printa uma string
-    la	$a0, txt_valor_rem
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la	$a0, txt_valor_rem              # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
     li $v0, 5                           # Lê um inteiro digitado pelo usuario
     syscall
     move $t0, $s0                       # Move o inicio da lista para $t0
@@ -236,9 +245,9 @@ procurar_elemento:
     j procurar_elemento
 
 fim_da_lista:
-    li $v0, 4
-    la $a0, txt_val_inex
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_val_inex                # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
     j mostrar_menu
 
@@ -254,17 +263,17 @@ ordenar:
 #                Mostra Dados de exclusão e inclusão                          #
 ###############################################################################
 mostrar_totais:
-    li $v0, 4                           # Printa uma string
-    la $a0, txt_total_inc               # Printa mensagem de inclusões
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_total_inc               # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
     li $v0, 1                           # Printa um inteiro
     move $a0, $s2                       # Coloca a quantidade de inclusões em $a0
     syscall
 
-    li $v0, 4                           # Printa uma string
-    la $a0, txt_total_exc               # Printa mensagem de exclusões
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_total_exc               # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
     li $v0, 1                           # Printa um inteiro
     move $a0, $s1                       # Coloca a quantidade de exclusões em $a0
@@ -277,9 +286,9 @@ mostrar_totais:
 #                                                                             #
 ###############################################################################
 mostrar_lista:
-    li $v0, 4
-    la $a0, txt_lista                   # Printa uma string
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_lista                   # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
     move $t0, $s0                       # Move o inicio da lista para $t0
     addi $t0, $t0, 4                    # Pega o valor Contido na primeira posição
     move $t2, $s0               # ponteiro para o próximo
