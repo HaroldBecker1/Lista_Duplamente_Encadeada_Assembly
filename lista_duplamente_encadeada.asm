@@ -16,7 +16,7 @@ txt_espaco: 	.asciiz		" "
 txt_posicao:	.asciiz     "Posicao Inserida: "
 txt_vremovido:	.asciiz		"Valor Removido: "
 txt_iremovido:	.asciiz		"Indice Removido: "
-    .text
+                .text
 
 main:
     add $s0, $zero, $zero               # INICIO DA LISTA
@@ -154,11 +154,16 @@ excluir_indice:
     addi $t7, $t7, 8     # pego o segundo ponteiro
     lw $t3, 0($t7)      # pego o segundo ponteiro
     beq $t3, $zero, ultimo #passo para pegar o último valor
-########
-    li $v0, 4                           # Indica irá alocar uma quantidade de bytes na memória
-    la $a0, txt_sair 			                # Quantidade de bytes a ser alocado
-    syscall
-#######
+    ##########valor do meio#############
+    sw $zero, 0($t7)    # exclui o ponteiro próximo
+    addi $t7, $t7, -4
+    sw $zero, 0($t7)    # exclui o valor
+    addi $t7, $t7, -4
+    lw $t0, 0($t7)
+    sw $zero, 0($t7)    #exclui o ponteiro do valor anterior
+    addi $t0, $t0, 8    #movo para o valor do ponteiro próximo
+    sw $t3, 0($t0)      #sobreescrevo o valor sob o ponteiro antigo
+
     j mostrar_menu
 acha_indice:
     beq $t2, $t1, retorna #caso achou o valor retorna
