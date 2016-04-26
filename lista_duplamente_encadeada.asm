@@ -1,5 +1,5 @@
 .data
-menu:   	.asciiz		"\n\n-  Lista Ordenada  -\n-       MENU       - \n1 - Incluir Elemento \n2 - Excluir Elemento por indice\n3 - Excluir Elemento por valor\n4 - Ordenar Lista\n5 - Mostrar Totais\n6 - Mostrar Lista\n7 - Sair\n\nopcao: "
+menu:   	.asciiz		"\n\n-  Lista Ordenada  -\n-       MENU       - \n1 - Incluir Elemento \n2 - Excluir Elemento por indice\n3 - Excluir Elemento por valor\n4 - Mostrar Totais\n5 - Mostrar Lista\n6 - Sair\n\nopcao: "
 
 txt_invalida: 	.asciiz		"OPCAO INVALIDA\n"
 txt_valor: 		.asciiz		"Entre com o valor a ser inserido: "
@@ -17,12 +17,14 @@ txt_posicao:	.asciiz     "Posicao Inserida: "
 txt_vremovido:	.asciiz		"Valor Removido: "
 txt_iremovido:	.asciiz		"Indice Removido: "
                 .text
-
+###############################################################################
+#                                                                             #
+###############################################################################
 main:
     add $s0, $zero, $zero               # INICIO DA LISTA
     add $s1, $zero, $zero               # CONTADOR DE EXCLUSÃO
     add $s2, $zero, $zero               # CONTADOR DE INSERSÕES
-        add $s3, $zero, $zero           # ÚLTIMO ELEMENTO DA LISTA
+    add $s3, $zero, $zero               # ÚLTIMO ELEMENTO DA LISTA
 ###############################################################################
 #                              Printa o menu                                  #
 ###############################################################################
@@ -54,12 +56,10 @@ case_escolha:
     addi $t1, $zero, 3
     beq  $t0, $t1, excluir_por_valor    # Testa para ver se a opção escolhida foi excluir um elemento pelo seu valor
     addi $t1, $zero, 4
-    beq  $t0, $t1, ordenar              # Testa para ver se a opção escolhida foi ordenar a lista
-    addi $t1, $zero, 5
     beq  $t0, $t1, mostrar_totais       # Testa para ver se a opção escolhida foi mostrar estatísticas da lista
-    addi $t1, $zero, 6
+    addi $t1, $zero, 5
     beq  $t0, $t1, mostrar_lista        # Testa para ver se a opção escolhida foi exibir os dados da lista
-    addi $t1, $zero, 7
+    addi $t1, $zero, 6
     beq  $t0, $t1, op_sair              # Testa para ver se a opção escolhida foi sair do programa
 ###############################################################################
 #                       Imprime Opção inválida                                #
@@ -83,7 +83,7 @@ imprime_opcao_invalida:
 #   fila, o valor que foi digitado e o ponteiro para o próximo elemento da    #
 #   lista, concluído essa parte, é incremento o contador de inclusões.        #
 ###############################################################################
-#                                                                             #
+#                       Incluir Elemento                                      #
 ###############################################################################
 incluir_elemento:
     li $v0, 4                           # Indica que irá ser printado uma string
@@ -131,88 +131,104 @@ excluir_por_indice:
     li $v0, 4                           # Indica que irá ser printado uma string
     la	$a0, txt_indice                 # Move a string a ser printada
     syscall                             # Faz a chamada de sistema
-    li $v0, 5
-    syscall
-    move $t7, $v0  #valor digitado pelo usuario
-    bne $s0, $zero, excluir_indice #caso a lista não seja nula
-    li $v0, 4
-    la $a0, txt_vazia
-    syscall
+    li $v0, 5                           # Indica que irá ler um valor inteiro do teclado
+    syscall                             # Faz a chamada de sistema
+    move $t7, $v0                       # Move valor lido para $t7
+    bne $s0, $zero, excluir_indice      # Faz a verificação de nulidade da lista
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_vazia                   # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
-    j mostrar_menu
-
+    j mostrar_menu                      # Retorna para o menu
+###############################################################################
+#                         Excluir Indice                                      #
+###############################################################################
 excluir_indice:
-    move $t1, $t7       # Indice
-    move $t7, $s0       # Início do vetor
-    addi $t7, $t7, 8
-    add $t2, $zero, $zero # contador
-    jal acha_indice
-    addi $t7, $t7, -8 #retorna o ponteiro para o anterior
-    lw $t3, 0($t7)
-    addi $s1, $s1, 1    # contador de exclusoes
-    beq $t3, $zero, primeiro_ou_unico
-    addi $t7, $t7, 8     # pego o segundo ponteiro
-    lw $t3, 0($t7)      # pego o segundo ponteiro
-    beq $t3, $zero, ultimo #passo para pegar o último valor
-    ##########valor do meio#############
-    sw $zero, 0($t7)    # exclui o ponteiro próximo
-    addi $t7, $t7, -4
-    sw $zero, 0($t7)    # exclui o valor
-    addi $t7, $t7, -4
-    lw $t0, 0($t7)
-    sw $zero, 0($t7)    #exclui o ponteiro do valor anterior
-    addi $t0, $t0, 8    #movo para o valor do ponteiro próximo
-    sw $t3, 0($t0)      #sobreescrevo o valor sob o ponteiro antigo
+    move $t1, $t7                       # Move o indice digitado para $t1
+    move $t7, $s0                       # Move o inicio da lista para $t7
+    addi $t7, $t7, 8                    # Posiciono sob o ponteiro próximo
+    add $t2, $zero, $zero               # Inicio o contador que busca o indice
+    jal acha_indice                     # Procura o valor com o indice passado
+    addi $t7, $t7, -8                   # Posiciona o sob o ponteiro anterior
+    lw $t3, 0($t7)                      # Busca o ponteiro anterior na memória
+    addi $s1, $s1, 1                    # Incrementa o contador de exclusões
+    beq $t3, $zero, primeiro_ou_unico   # Verifica se o ponteiro anterior é nulo
+    addi $t7, $t7, 8                    # Posiciono sob o ponteiro próximo
+    lw $t3, 0($t7)                      # Busca o ponteiro próximo na memória
+    beq $t3, $zero, ultimo              # Verifica se o ponteiro próximo é nulo
+    sw $zero, 0($t7)                    # Exclui o ponteiro próximo da memória
+    addi $t7, $t7, -4                   # Posiciona o ponteiro sob o valor
+    sw $zero, 0($t7)                    # Exclui o valor da memória
+    addi $t7, $t7, -4                   # Posiciona sob o ponteiro anterior
+    lw $t0, 0($t7)                      # Busca o ponteiro anterior na memória
+    sw $zero, 0($t7)                    # Exclui o ponteiro anterior
+                                        # $t3 possui o inicio do elemento candidato a próximo da lista
+    sw $t0, 0($t3)                      # Sobreescreve o ponteiro com o inicio do elemento anterior
+    addi $t0, $t0, 8                    # Posiciona sob o ponteiro próximo
+    sw $t3, 0($t0)                      # Sobreescreve o ponteiro próximo com o local de memoria do candidato a próximo da lista
 
-    j mostrar_menu
+    j mostrar_menu                      # Retorna para o menu
+###############################################################################
+#                     Procura Indice                                          #
+###############################################################################
 acha_indice:
-    beq $t2, $t1, retorna #caso achou o valor retorna
-    lw $t5, 0($t7)
-    beq $t5, $zero, indice_invalido
-    addi $t7, $t5, 8
-    addi $t2, $t2, 1
+    beq $t2, $t1, retorna               # Verifica se o indice já foi achado
+    lw $t5, 0($t7)                      # Busca o próximo elemento da lista
+    beq $t5, $zero, indice_invalido     # Verifica se o próximo elemento da lista é nulo
+    addi $t7, $t5, 8                    # Posiciono sob o ponteiro próximo
+    addi $t2, $t2, 1                    # Incrementa o contador
 
-    j acha_indice
+    j acha_indice                       # Retorna para procurar o indice
+###############################################################################
+#                             Retorno                                         #
+###############################################################################
 retorna:
-    jr $ra
-
+    jr $ra                              # Retorna para quem chamou
+###############################################################################
+#                         Indice Inválido                                     #
+###############################################################################
 indice_invalido:
-    li $v0, 4
-    la $a0, txt_ind_inex
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_ind_inex                # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
-    j mostrar_menu
-
+    j mostrar_menu                      # Retorna para o menu
+###############################################################################
+#                    Primeiro elemento ou Único                               #
+###############################################################################
 primeiro_ou_unico:
-    addi $t7, $t7, 8 #pego o ultimo ponteiro
-    lw $t3, 0($t7)  #pego o ultimo ponteiro
-    beq $t3, $zero, unico   #testo para ver se é o unico elemento da lista
-    sw $zero, 0($t3)    #exclui o ponteiro
-    sw $zero, 0($t7)    #exclui o ponteiro que aponta para o atual primeiro elemento da lista
-    addi $t7, $t7, -4   #pego o local de memória do valor
-    sw $zero, 0($t7)    #exclui valor
-    move $s0, $t3       #move o novo inicio do vetor
+    addi $t7, $t7, 8                    # Posiciona sob o ponteiro próximo
+    lw $t3, 0($t7)                      # Busca o próximo elemento
+    beq $t3, $zero, unico               # Verifico se é o unico elemento da lista
+    sw $zero, 0($t3)                    # Exclui o ponteiro próximo
+    addi $t7, $t7, -4                   # Posiciona o ponteiro sob o valor
+    sw $zero, 0($t7)                    # Remove o valor da memória
+    move $s0, $t3                       # Move o novo início da lista
 
-    j mostrar_menu
-
+    j mostrar_menu                      # Retorna para o menu
+###############################################################################
+#                        Único Elemento                                       #
+###############################################################################
 unico:
-    addi $t7, $t7, -4   #posiciono o ponteiro sob o valor
-    sw $zero, 0($t7)    # removo o valor da memória
-    move $s0, $zero     # anulo o inicio do vetor
+    addi $t7, $t7, -4                   # Posiciona o ponteiro sob o valor
+    sw $zero, 0($t7)                    # Remove o valor da memória
+    move $s0, $zero                     # Anula o inicio do vetor
 
-    j mostrar_menu
-
+    j mostrar_menu                      # Retorna para o menu
+###############################################################################
+#                      Último Elemento                                        #
+###############################################################################
 ultimo:
-    addi, $t7, $t7, -4
-    sw $zero, 0($t7)
-    addi, $t7, $t7, -4
-    lw $t3, 0($t7)
-    sw $zero, 0($t7)
-    move $s3, $t3
-    addi $t3, $t3, 8
-    sw $zero, 0($t3)
+    addi, $t7, $t7, -4                  # Posiciona o ponteiro sob o valor
+    sw $zero, 0($t7)                    # Remove o valor da memória
+    addi, $t7, $t7, -4                  # Posiciona sob o ponteiro anterior
+    lw $t3, 0($t7)                      # Busca o elemento anterior da lista
+    sw $zero, 0($t7)                    # Exclui o ponteiro anterior
+    move $s3, $t3                       # Move o último elemento da lista para $s3
+    addi $t3, $t3, 8                    # Posiciona sob o ponteiro próximo
+    sw $zero, 0($t3)                    # Exclui o ponteiro próximo
 
-    j mostrar_menu
+    j mostrar_menu                      # Retorna para o menu
 ###############################################################################
 #                      Exclui Elemento por valor                              #
 ###############################################################################
@@ -223,68 +239,62 @@ excluir_por_valor:
     la	$a0, txt_valor_rem              # Move a string a ser printada
     syscall                             # Faz a chamada de sistema
     li $v0, 5                           # Lê um inteiro digitado pelo usuario
-    syscall
+    syscall                             # Faz a chamada de sistema
     move $t0, $s0                       # Move o inicio da lista para $t0
-    move $t1, $v0                       # Guardo o valor digitado em $t1
-    move $t2, $s0
-    addi $t0, $t0, 4                    # Pego o local de memória do primeiro elemento na lista
-    addi $t2, $t2, 8
-    add $t7, $zero, $zero               #indice do valor
+    move $t1, $v0                       # Move o valor digitado para $t1
+    move $t2, $s0                       # Move o inicio da lista para $t2
+    addi $t0, $t0, 4                    # Posiciona o ponteiro sob o valor
+    addi $t2, $t2, 8                    # Posiciona sob o ponteiro próximo
+    add $t7, $zero, $zero               # Inicializo índice do valor
     bne $s0, $zero, procurar_elemento   # Testo se o inicio do vetor não é nulo
-    li $v0, 4                           # Printa uma string
-    la	$a0, txt_vazia
-    syscall
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la	$a0, txt_vazia                  # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
-    j mostrar_menu
-
+    j mostrar_menu                      # Retorna para o menu
+###############################################################################
+#                       Procura Elemento por valor                            #
+###############################################################################
 procurar_elemento:
     lw $t3, 0($t0)                      # Busco o valor na memória
-    lw $t4, 0($t2)                      #próximo ponteiro
-    beq $t3, $t1, excluir_indice     # Testo se o primeiro valor é diferente do que foi digitado
-    beq $t4, $zero, fim_da_lista    #próximo valor da memória não existe
-    lw $t5, 0($t2)
-    addi $t0, $t5, 4                   # Pego o local de memória do elemento na lista
-    addi $t2, $t5, 8
-    addi $t7, $t7, 1                    # próxima posição
+    lw $t4, 0($t2)                      # Leio o próximo ponteiro
+    beq $t3, $t1, excluir_indice        # Verifica se valor é igual ao que foi digitado
+    beq $t4, $zero, fim_da_lista        # Verifica se o ponteiro próximo não existe
+    addi $t0, $t4, 4                    # Posiciona o ponteiro sob o valor
+    addi $t2, $t4, 8                    # Posiciona o sob o ponteiro próximo
+    addi $t7, $t7, 1                    # Incrementa o valor do índice
 
-    j procurar_elemento
-
+    j procurar_elemento                 # Retorna para procurar_elemento
+###############################################################################
+#                       Fim da lista por valor                                #
+###############################################################################
 fim_da_lista:
     li $v0, 4                           # Indica que irá ser printado uma string
     la $a0, txt_val_inex                # Move a string a ser printada
     syscall                             # Faz a chamada de sistema
 
-    j mostrar_menu
-
+    j mostrar_menu                      # Retorna para o menu
 ###############################################################################
-#                      Ordena vetor de dados                                  #
-###############################################################################
-ordenar:
-    la	$a0, txt_invalida
-    syscall
-
-    j mostrar_menu
-###############################################################################
-#                Mostra Dados de exclusão e inclusão                          #
+#                Mostrar Dados de exclusão e inclusão                          #
 ###############################################################################
 mostrar_totais:
     li $v0, 4                           # Indica que irá ser printado uma string
     la $a0, txt_total_inc               # Move a string a ser printada
     syscall                             # Faz a chamada de sistema
 
-    li $v0, 1                           # Printa um inteiro
-    move $a0, $s2                       # Coloca a quantidade de inclusões em $a0
-    syscall
+    li $v0, 1                           # Indica que irá ser printado um inteiro
+    move $a0, $s2                       # Move o inteiro a ser mostrado
+    syscall                             # Faz a chamada de sistema
 
     li $v0, 4                           # Indica que irá ser printado uma string
     la $a0, txt_total_exc               # Move a string a ser printada
     syscall                             # Faz a chamada de sistema
 
-    li $v0, 1                           # Printa um inteiro
-    move $a0, $s1                       # Coloca a quantidade de exclusões em $a0
-    syscall
+    li $v0, 1                           # Indica que irá ser printado um inteiro
+    move $a0, $s1                       # Move o inteiro a ser mostrado
+    syscall                             # Faz a chamada de sistema
 
-    j mostrar_menu                      # Retorna para o início
+    j mostrar_menu                      # Retorna para o menu
 ###############################################################################
 #                           Mostrar Lista                                     #
 ###############################################################################
@@ -295,33 +305,38 @@ mostrar_lista:
     la $a0, txt_lista                   # Move a string a ser printada
     syscall                             # Faz a chamada de sistema
     move $t0, $s0                       # Move o inicio da lista para $t0
-    addi $t0, $t0, 4                    # Pega o valor Contido na primeira posição
-    move $t2, $s0               # ponteiro para o próximo
-    addi $t2, $t2, 8                    #pego o próximo valor
-    bne $s0, $zero, listar              # Caso  $s0 não seja nulo ele mostra a lista
-    li $v0, 4
-    la $a0, txt_vazia                   # Printa uma string
-    syscall
+    addi $t0, $t0, 4                    # Pega o valor contido na primeira posição
+    move $t2, $s0                       # Move o início da lista para $t2
+    addi $t2, $t2, 8                    # Pego o ponteiro próximo
+    bne $s0, $zero, listar              # Faz a verificação de nulidade da lista
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_vazia                   # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
 
     j mostrar_menu                      # Retorna para o menu
-
+###############################################################################
+#                            Listar Valores                                   #
+###############################################################################
 listar:
-    lw $t1, 0($t0)                      # Busca na memoria o valor do campo
-    li $v0, 1                           # Printa um inteiro
-    move $a0, $t1                       # Printo o valor
-    syscall
-    li $v0, 4                           # Printa uma string
-    la $a0, txt_espaco
-    syscall
-    lw $t3, 0($t2)
-    addi $t0, $t3, 4
-    addi $t2, $t3, 8
-    beq $t3, $zero, mostrar_menu          # Verifica se o próximo ponteiro é nulo
+    lw $t1, 0($t0)                      # Busca na memoria o valor
+    li $v0, 1                           # Indica que irá ser printado um inteiro
+    move $a0, $t1                       # Move o inteiro a ser mostrado
+    syscall                             # Faz a chamada de sistema
+    li $v0, 4                           # Indica que irá ser printado uma string
+    la $a0, txt_espaco                  # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
+    lw $t3, 0($t2)                      # Pega o inicio do próximo elemento da lista
+    addi $t0, $t3, 4                    # Posiciona o Ponteiro sob o valor
+    addi $t2, $t3, 8                    # Posiciona sob o Ponteiro próximo
+    beq $t3, $zero, mostrar_menu        # Verifica se o ponteiro próximo é nulo
+
     j listar                            # Retorna para Listar o próximo elemento
 ###############################################################################
 #                         Sair do programa                                    #
 ###############################################################################
 op_sair:
-    la  $a0, txt_sair
-    li	$v0, 10
-    syscall
+    li	$v0, 4                          # Indica que irá ser printado uma string
+    la  $a0, txt_sair                   # Move a string a ser printada
+    syscall                             # Faz a chamada de sistema
+    li $v0, 10                          # Indica que irá finalizar o programa
+    syscall                             # Faz a chamada de sistema
